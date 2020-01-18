@@ -1,7 +1,8 @@
-const axios = require('axios');
-const Dev = require('../models/Dev');
+const axios = require("axios");
+const Dev = require("../models/Dev");
 
-const parseStringAsArray = require('../utils/parseStringAsArray');
+const { findConnections, sendMessage } = require("../websocket");
+const parseStringAsArray = require("../utils/parseStringAsArray");
 
 module.exports = {
   async index(request, response) {
@@ -25,8 +26,8 @@ module.exports = {
       const techsArray = parseStringAsArray(techs);
 
       const location = {
-        type: 'Point',
-        coordinates: [longitude, latitude],
+        type: "Point",
+        coordinates: [longitude, latitude]
       };
 
       dev = await Dev.create({
@@ -35,10 +36,18 @@ module.exports = {
         avatar_url,
         bio,
         techs: techsArray,
-        location,
+        location
       });
+
+      // Filtrar conexões do socket
+      const sendSocketMessageTo = findConnections(
+        { latitude, longitude },
+        techsArray
+      );
+
+      sendMessage(sendSocketMessageTo, "new-dev", dev);
     }
 
     return response.json(dev);
-  },
+  }
 };
